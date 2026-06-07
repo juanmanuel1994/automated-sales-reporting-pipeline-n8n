@@ -1,0 +1,370 @@
+{
+  "name": "CSV → Google Sheets + PDF Report → Gmail",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "node-trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 400],
+      "notes": "Run manually or swap for a Schedule Trigger to automate daily/weekly"
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "filePath": "YOUR_CSV_FILE_PATH_HERE"
+      },
+      "id": "node-read-csv",
+      "name": "Read CSV File",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [220, 400]
+    },
+    {
+      "parameters": {
+        "options": {
+          "includeEmpty": false,
+          "headerRow": true,
+          "delimiter": ","
+        }
+      },
+      "id": "node-parse-csv",
+      "name": "Parse CSV",
+      "type": "n8n-nodes-base.spreadsheetFile",
+      "typeVersion": 2,
+      "position": [440, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Drop rows missing required numeric fields or order_id\nconst required = ['order_id','date','revenue','gross_profit','quantity','unit_price','unit_cost'];\nconst valid = [];\nconst invalid = [];\n\nfor (const item of $input.all()) {\n  const r = item.json;\n  const ok = required.every(k => r[k] !== '' && r[k] !== null && r[k] !== undefined);\n  const numOk = ['revenue','gross_profit','quantity','unit_price','unit_cost','cogs']\n    .every(k => !isNaN(parseFloat(r[k])));\n  if (ok && numOk) valid.push({ json: r });\n  else invalid.push(r.order_id || 'unknown');\n}\n\nif (invalid.length) {\n  console.log(`Skipped ${invalid.length} invalid rows: ${invalid.join(', ')}`);\n}\n\nif (valid.length === 0) throw new Error('No valid rows found in CSV.');\n\nreturn valid;"
+      },
+      "id": "node-validate",
+      "name": "Validate & Clean Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Sort rows by gross_profit descending\nconst rows = $input.all().map(i => ({\n  ...i.json,\n  quantity:         parseInt(i.json.quantity)              || 0,\n  unit_price:       parseFloat(i.json.unit_price)          || 0,\n  unit_cost:        parseFloat(i.json.unit_cost)           || 0,\n  discount_pct:     parseFloat(i.json.discount_pct)        || 0,\n  revenue:          parseFloat(i.json.revenue)             || 0,\n  cogs:             parseFloat(i.json.cogs)                || 0,\n  gross_profit:     parseFloat(i.json.gross_profit)        || 0,\n  gross_margin_pct: parseFloat(i.json.gross_margin_pct)    || 0\n}));\n\nrows.sort((a, b) => b.gross_profit - a.gross_profit);\n\nreturn rows.map(r => ({ json: r }));"
+      },
+      "id": "node-sort",
+      "name": "Sort by Gross Profit",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Compute all KPIs from sorted rows\nconst rows = $input.all().map(i => i.json);\n\nconst totalRevenue  = rows.reduce((s, r) => s + r.revenue, 0);\nconst totalCOGS     = rows.reduce((s, r) => s + r.cogs, 0);\nconst totalProfit   = rows.reduce((s, r) => s + r.gross_profit, 0);\nconst avgMargin     = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;\nconst totalOrders   = rows.length;\nconst totalUnits    = rows.reduce((s, r) => s + r.quantity, 0);\nconst avgOrderValue = totalRevenue / totalOrders;\nconst bestOrder     = rows[0];\n\nreturn [{ json: {\n  rows,\n  kpis: {\n    totalRevenue:    parseFloat(totalRevenue.toFixed(2)),\n    totalCOGS:       parseFloat(totalCOGS.toFixed(2)),\n    totalProfit:     parseFloat(totalProfit.toFixed(2)),\n    avgMarginPct:    parseFloat(avgMargin.toFixed(2)),\n    totalOrders,\n    totalUnits,\n    avgOrderValue:   parseFloat(avgOrderValue.toFixed(2)),\n    bestOrderId:     bestOrder.order_id,\n    bestOrderProfit: bestOrder.gross_profit\n  },\n  generatedAt: new Date().toISOString()\n}}];"
+      },
+      "id": "node-kpis",
+      "name": "Calculate KPIs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, 400]
+    },
+    {
+      "parameters": {
+        "numberOutputs": 4,
+        "output": "specified"
+      },
+      "id": "node-split",
+      "name": "Split into Branches",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [1320, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Aggregate revenue, profit and orders by product category\nconst { rows } = $input.first().json;\nconst map = {};\nrows.forEach(r => {\n  if (!map[r.category]) map[r.category] = { category: r.category, revenue: 0, cogs: 0, gross_profit: 0, orders: 0, units: 0 };\n  map[r.category].revenue      += r.revenue;\n  map[r.category].cogs         += r.cogs;\n  map[r.category].gross_profit += r.gross_profit;\n  map[r.category].orders       += 1;\n  map[r.category].units        += r.quantity;\n});\nconst result = Object.values(map)\n  .sort((a, b) => b.revenue - a.revenue)\n  .map(d => ({\n    ...d,\n    revenue:      parseFloat(d.revenue.toFixed(2)),\n    cogs:         parseFloat(d.cogs.toFixed(2)),\n    gross_profit: parseFloat(d.gross_profit.toFixed(2)),\n    margin_pct:   parseFloat((d.gross_profit / d.revenue * 100).toFixed(2))\n  }));\nreturn [{ json: { byCategory: result } }];"
+      },
+      "id": "node-agg-category",
+      "name": "Aggregate by Category",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1540, 160]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Aggregate revenue, profit and orders by sales region\nconst { rows } = $input.first().json;\nconst map = {};\nrows.forEach(r => {\n  if (!map[r.region]) map[r.region] = { region: r.region, revenue: 0, gross_profit: 0, orders: 0, units: 0 };\n  map[r.region].revenue      += r.revenue;\n  map[r.region].gross_profit += r.gross_profit;\n  map[r.region].orders       += 1;\n  map[r.region].units        += r.quantity;\n});\nconst result = Object.values(map)\n  .sort((a, b) => b.revenue - a.revenue)\n  .map(d => ({\n    ...d,\n    revenue:      parseFloat(d.revenue.toFixed(2)),\n    gross_profit: parseFloat(d.gross_profit.toFixed(2)),\n    margin_pct:   parseFloat((d.gross_profit / d.revenue * 100).toFixed(2))\n  }));\nreturn [{ json: { byRegion: result } }];"
+      },
+      "id": "node-agg-region",
+      "name": "Aggregate by Region",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1540, 320]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Aggregate revenue and profit per calendar month\nconst { rows } = $input.first().json;\nconst map = {};\nrows.forEach(r => {\n  const month = r.date.slice(0, 7);\n  if (!map[month]) map[month] = { month, revenue: 0, gross_profit: 0, orders: 0 };\n  map[month].revenue      += r.revenue;\n  map[month].gross_profit += r.gross_profit;\n  map[month].orders       += 1;\n});\nconst result = Object.values(map)\n  .sort((a, b) => a.month.localeCompare(b.month))\n  .map(d => ({\n    ...d,\n    revenue:      parseFloat(d.revenue.toFixed(2)),\n    gross_profit: parseFloat(d.gross_profit.toFixed(2)),\n    margin_pct:   parseFloat((d.gross_profit / d.revenue * 100).toFixed(2))\n  }));\nreturn [{ json: { monthly: result } }];"
+      },
+      "id": "node-agg-monthly",
+      "name": "Aggregate Monthly Trend",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1540, 480]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Top 5 products by revenue + salesperson leaderboard + channel breakdown\nconst { rows } = $input.first().json;\n\nconst byProduct = {};\nrows.forEach(r => {\n  if (!byProduct[r.product_name]) byProduct[r.product_name] = { product: r.product_name, category: r.category, revenue: 0, gross_profit: 0, units: 0 };\n  byProduct[r.product_name].revenue      += r.revenue;\n  byProduct[r.product_name].gross_profit += r.gross_profit;\n  byProduct[r.product_name].units        += r.quantity;\n});\nconst top5 = Object.values(byProduct)\n  .sort((a, b) => b.revenue - a.revenue)\n  .slice(0, 5)\n  .map(d => ({\n    ...d,\n    revenue:      parseFloat(d.revenue.toFixed(2)),\n    gross_profit: parseFloat(d.gross_profit.toFixed(2)),\n    margin_pct:   parseFloat((d.gross_profit / d.revenue * 100).toFixed(2))\n  }));\n\nconst bySales = {};\nrows.forEach(r => {\n  if (!bySales[r.salesperson]) bySales[r.salesperson] = { salesperson: r.salesperson, revenue: 0, gross_profit: 0, orders: 0 };\n  bySales[r.salesperson].revenue      += r.revenue;\n  bySales[r.salesperson].gross_profit += r.gross_profit;\n  bySales[r.salesperson].orders       += 1;\n});\nconst leaderboard = Object.values(bySales)\n  .sort((a, b) => b.revenue - a.revenue)\n  .map(d => ({\n    ...d,\n    revenue:      parseFloat(d.revenue.toFixed(2)),\n    gross_profit: parseFloat(d.gross_profit.toFixed(2)),\n    margin_pct:   parseFloat((d.gross_profit / d.revenue * 100).toFixed(2))\n  }));\n\nconst byChannel = {};\nrows.forEach(r => {\n  if (!byChannel[r.channel]) byChannel[r.channel] = { channel: r.channel, revenue: 0, gross_profit: 0, orders: 0 };\n  byChannel[r.channel].revenue      += r.revenue;\n  byChannel[r.channel].gross_profit += r.gross_profit;\n  byChannel[r.channel].orders       += 1;\n});\nconst channels = Object.values(byChannel).sort((a, b) => b.revenue - a.revenue);\n\nreturn [{ json: { top5Products: top5, leaderboard, channels } }];"
+      },
+      "id": "node-agg-products",
+      "name": "Top Products & Leaderboard",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1540, 640]
+    },
+    {
+      "parameters": {
+        "mode": "append",
+        "options": {}
+      },
+      "id": "node-merge",
+      "name": "Merge Aggregations",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [1760, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Flatten sorted rows into individual items for Google Sheets tab\nconst { rows } = $('Calculate KPIs').first().json;\nreturn rows.map(r => ({ json: r }));"
+      },
+      "id": "node-flatten-rows",
+      "name": "Flatten Rows for Sheets",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1980, 240]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_GOOGLE_SHEET_ID_HERE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Sales Data"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {}
+        },
+        "options": {}
+      },
+      "id": "node-sheets-sales",
+      "name": "Sheets → Sales Data",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [2200, 160]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build KPI summary rows for Google Sheets tab\nconst kpis = $('Calculate KPIs').first().json.kpis;\nconst merged = $input.first().json;\nconst { byCategory, byRegion, monthly, top5Products, leaderboard, channels } = merged;\n\nconst fmt = v => Number(v).toFixed(2);\nconst rows = [\n  { section: 'KPI',        metric: 'Total Revenue',    value: `$${fmt(kpis.totalRevenue)}` },\n  { section: 'KPI',        metric: 'Total COGS',        value: `$${fmt(kpis.totalCOGS)}` },\n  { section: 'KPI',        metric: 'Gross Profit',      value: `$${fmt(kpis.totalProfit)}` },\n  { section: 'KPI',        metric: 'Avg Margin',        value: `${fmt(kpis.avgMarginPct)}%` },\n  { section: 'KPI',        metric: 'Total Orders',      value: kpis.totalOrders },\n  { section: 'KPI',        metric: 'Units Sold',        value: kpis.totalUnits },\n  { section: 'KPI',        metric: 'Avg Order Value',   value: `$${fmt(kpis.avgOrderValue)}` },\n  { section: 'KPI',        metric: 'Best Order ID',     value: kpis.bestOrderId },\n  ...(byCategory || []).map(d => ({ section: 'Category',    metric: d.category,      value: `Rev $${fmt(d.revenue)} | Profit $${fmt(d.gross_profit)} | Margin ${d.margin_pct}%` })),\n  ...(byRegion   || []).map(d => ({ section: 'Region',      metric: d.region,        value: `Rev $${fmt(d.revenue)} | Profit $${fmt(d.gross_profit)} | Orders ${d.orders}` })),\n  ...(monthly    || []).map(d => ({ section: 'Monthly',     metric: d.month,         value: `Rev $${fmt(d.revenue)} | Profit $${fmt(d.gross_profit)}` })),\n  ...(top5Products || []).map(d => ({ section: 'Top Product',  metric: d.product,   value: `Rev $${fmt(d.revenue)} | Margin ${d.margin_pct}%` })),\n  ...(leaderboard  || []).map(d => ({ section: 'Salesperson',  metric: d.salesperson, value: `Rev $${fmt(d.revenue)} | Orders ${d.orders}` })),\n  ...(channels     || []).map(d => ({ section: 'Channel',      metric: d.channel,   value: `Rev $${fmt(d.revenue)} | Orders ${d.orders}` }))\n];\nreturn rows.map(r => ({ json: r }));"
+      },
+      "id": "node-format-kpi-rows",
+      "name": "Format KPI Sheet Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1980, 400]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_GOOGLE_SHEET_ID_HERE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "KPI Summary"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {}
+        },
+        "options": {}
+      },
+      "id": "node-sheets-kpi",
+      "name": "Sheets → KPI Summary",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [2200, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build the full HTML report string from all aggregations\nconst kpisData  = $('Calculate KPIs').first().json;\nconst merged    = $('Merge Aggregations').first().json;\nconst { kpis, rows } = kpisData;\nconst { byCategory, byRegion, monthly, top5Products, leaderboard, channels } = merged;\n\nconst fmt    = v => Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });\nconst fmtPct = v => Number(v).toFixed(1) + '%';\nconst today  = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });\n\nconst catRows  = (byCategory || []).map(d => `<tr><td>${d.category}</td><td class=\"num\">$${fmt(d.revenue)}</td><td class=\"num\">$${fmt(d.gross_profit)}</td><td class=\"num\">${fmtPct(d.margin_pct)}</td><td class=\"num\">${d.orders}</td></tr>`).join('');\nconst regRows  = (byRegion   || []).map(d => `<tr><td>${d.region}</td><td class=\"num\">$${fmt(d.revenue)}</td><td class=\"num\">$${fmt(d.gross_profit)}</td><td class=\"num\">${fmtPct(d.margin_pct)}</td><td class=\"num\">${d.orders}</td></tr>`).join('');\nconst monRows  = (monthly    || []).map(d => `<tr><td>${d.month}</td><td class=\"num\">$${fmt(d.revenue)}</td><td class=\"num\">$${fmt(d.gross_profit)}</td><td class=\"num\">${fmtPct(d.margin_pct)}</td><td class=\"num\">${d.orders}</td></tr>`).join('');\nconst top5Rows = (top5Products||[]).map(d => `<tr><td>${d.product}</td><td>${d.category}</td><td class=\"num\">${d.units}</td><td class=\"num\">$${fmt(d.revenue)}</td><td class=\"num\">$${fmt(d.gross_profit)}</td><td class=\"num\">${fmtPct(d.margin_pct)}</td></tr>`).join('');\nconst leadRows = (leaderboard ||[]).map((d,i) => `<tr><td><strong>#${i+1}</strong> ${d.salesperson}</td><td class=\"num\">$${fmt(d.revenue)}</td><td class=\"num\">$${fmt(d.gross_profit)}</td><td class=\"num\">${fmtPct(d.margin_pct)}</td><td class=\"num\">${d.orders}</td></tr>`).join('');\nconst chanRows = (channels    ||[]).map(d => `<tr><td>${d.channel}</td><td class=\"num\">$${fmt(d.revenue)}</td><td class=\"num\">$${fmt(d.gross_profit)}</td><td class=\"num\">${d.orders}</td></tr>`).join('');\nconst orderRows= (rows||[]).slice(0,10).map(r => `<tr><td>${r.order_id}</td><td>${r.date}</td><td>${r.product_name}</td><td class=\"num\">${r.quantity}</td><td class=\"num\">$${fmt(r.revenue)}</td><td class=\"num\">$${fmt(r.gross_profit)}</td><td class=\"num\">${r.gross_margin_pct}%</td><td>${r.region}</td><td>${r.salesperson}</td></tr>`).join('');\n\nconst html = `<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<style>\n*{box-sizing:border-box;margin:0;padding:0}\nbody{font-family:'Segoe UI',Arial,sans-serif;font-size:11px;color:#1a1a2e;background:#f0f2f5;padding:28px}\n.header{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 55%,#0f3460 100%);color:white;padding:26px 30px;border-radius:12px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:center}\n.header h1{font-size:21px;font-weight:700;letter-spacing:.4px}\n.header .sub{font-size:11px;color:#a8b2d8;margin-top:4px}\n.badge{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);border-radius:20px;padding:6px 16px;font-size:10px;color:#e2e8f0}\n.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}\n.kpi{background:white;border-radius:10px;padding:16px 18px;border-left:4px solid #0f3460;box-shadow:0 2px 8px rgba(0,0,0,.06)}\n.kpi.green{border-left-color:#10b981}.kpi.blue{border-left-color:#3b82f6}.kpi.purple{border-left-color:#8b5cf6}.kpi.orange{border-left-color:#f59e0b}.kpi.red{border-left-color:#ef4444}.kpi.teal{border-left-color:#14b8a6}.kpi.pink{border-left-color:#ec4899}.kpi.indigo{border-left-color:#6366f1}\n.kpi-label{font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:.8px;font-weight:600}\n.kpi-value{font-size:22px;font-weight:700;color:#1a1a2e;margin:5px 0 2px}\n.kpi-sub{font-size:9.5px;color:#9ca3af}\n.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}\n.section{background:white;border-radius:10px;padding:18px 20px;margin-bottom:18px;box-shadow:0 2px 8px rgba(0,0,0,.05)}\n.section-title{font-size:11px;font-weight:700;color:#0f3460;margin-bottom:12px;padding-bottom:7px;border-bottom:2px solid #e5e7eb;text-transform:uppercase;letter-spacing:.5px}\ntable{width:100%;border-collapse:collapse}\nth{background:#f1f5f9;color:#374151;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:8px 10px;text-align:left}\nth.num,td.num{text-align:right}\ntd{padding:7px 10px;border-bottom:1px solid #f3f4f6;font-size:10px;color:#374151}\ntr:last-child td{border-bottom:none}\ntr:hover td{background:#f8fafc}\n.footer{text-align:center;color:#9ca3af;font-size:9px;margin-top:20px;padding-top:14px;border-top:1px solid #e5e7eb}\n</style>\n</head>\n<body>\n<div class=\"header\">\n  <div>\n    <div class=\"sub\">AUTOMATED BUSINESS INTELLIGENCE · n8n Pipeline</div>\n    <h1>Sales &amp; Products Performance Report</h1>\n    <div class=\"sub\" style=\"margin-top:7px\">Generated ${today}</div>\n  </div>\n  <div class=\"badge\">${kpis.totalOrders} Orders</div>\n</div>\n\n<div class=\"kpi-grid\">\n  <div class=\"kpi blue\"><div class=\"kpi-label\">Total Revenue</div><div class=\"kpi-value\">$${fmt(kpis.totalRevenue)}</div><div class=\"kpi-sub\">${kpis.totalOrders} orders processed</div></div>\n  <div class=\"kpi green\"><div class=\"kpi-label\">Gross Profit</div><div class=\"kpi-value\">$${fmt(kpis.totalProfit)}</div><div class=\"kpi-sub\">Revenue minus COGS</div></div>\n  <div class=\"kpi purple\"><div class=\"kpi-label\">Avg Margin</div><div class=\"kpi-value\">${fmtPct(kpis.avgMarginPct)}</div><div class=\"kpi-sub\">Across all orders</div></div>\n  <div class=\"kpi orange\"><div class=\"kpi-label\">Total COGS</div><div class=\"kpi-value\">$${fmt(kpis.totalCOGS)}</div><div class=\"kpi-sub\">Cost of goods sold</div></div>\n  <div class=\"kpi teal\"><div class=\"kpi-label\">Units Sold</div><div class=\"kpi-value\">${kpis.totalUnits}</div><div class=\"kpi-sub\">Total product units</div></div>\n  <div class=\"kpi pink\"><div class=\"kpi-label\">Avg Order Value</div><div class=\"kpi-value\">$${fmt(kpis.avgOrderValue)}</div><div class=\"kpi-sub\">Revenue per order</div></div>\n  <div class=\"kpi red\"><div class=\"kpi-label\">Best Order Profit</div><div class=\"kpi-value\">$${fmt(kpis.bestOrderProfit)}</div><div class=\"kpi-sub\">${kpis.bestOrderId}</div></div>\n  <div class=\"kpi indigo\"><div class=\"kpi-label\">Total Orders</div><div class=\"kpi-value\">${kpis.totalOrders}</div><div class=\"kpi-sub\">All completed</div></div>\n</div>\n\n<div class=\"two-col\">\n  <div class=\"section\">\n    <div class=\"section-title\">Monthly Revenue &amp; Profit Trend</div>\n    <table><thead><tr><th>Month</th><th class=\"num\">Revenue</th><th class=\"num\">Profit</th><th class=\"num\">Margin</th><th class=\"num\">Orders</th></tr></thead>\n    <tbody>${monRows}</tbody></table>\n  </div>\n  <div class=\"section\">\n    <div class=\"section-title\">Top 5 Products by Revenue</div>\n    <table><thead><tr><th>Product</th><th>Category</th><th class=\"num\">Units</th><th class=\"num\">Revenue</th><th class=\"num\">Profit</th><th class=\"num\">Margin</th></tr></thead>\n    <tbody>${top5Rows}</tbody></table>\n  </div>\n</div>\n\n<div class=\"two-col\">\n  <div class=\"section\">\n    <div class=\"section-title\">Performance by Category</div>\n    <table><thead><tr><th>Category</th><th class=\"num\">Revenue</th><th class=\"num\">Profit</th><th class=\"num\">Margin</th><th class=\"num\">Orders</th></tr></thead>\n    <tbody>${catRows}</tbody></table>\n  </div>\n  <div class=\"section\">\n    <div class=\"section-title\">Performance by Region</div>\n    <table><thead><tr><th>Region</th><th class=\"num\">Revenue</th><th class=\"num\">Profit</th><th class=\"num\">Margin</th><th class=\"num\">Orders</th></tr></thead>\n    <tbody>${regRows}</tbody></table>\n  </div>\n</div>\n\n<div class=\"two-col\">\n  <div class=\"section\">\n    <div class=\"section-title\">Salesperson Leaderboard</div>\n    <table><thead><tr><th>Salesperson</th><th class=\"num\">Revenue</th><th class=\"num\">Profit</th><th class=\"num\">Margin</th><th class=\"num\">Orders</th></tr></thead>\n    <tbody>${leadRows}</tbody></table>\n  </div>\n  <div class=\"section\">\n    <div class=\"section-title\">Sales by Channel</div>\n    <table><thead><tr><th>Channel</th><th class=\"num\">Revenue</th><th class=\"num\">Profit</th><th class=\"num\">Orders</th></tr></thead>\n    <tbody>${chanRows}</tbody></table>\n  </div>\n</div>\n\n<div class=\"section\">\n  <div class=\"section-title\">Top 10 Orders by Gross Profit</div>\n  <table><thead><tr><th>Order</th><th>Date</th><th>Product</th><th class=\"num\">Qty</th><th class=\"num\">Revenue</th><th class=\"num\">Profit</th><th class=\"num\">Margin</th><th>Region</th><th>Salesperson</th></tr></thead>\n  <tbody>${orderRows}</tbody></table>\n</div>\n\n<div class=\"footer\">Automatically generated by n8n &nbsp;|&nbsp; ${today} &nbsp;|&nbsp; Confidential — Internal Use Only</div>\n</body></html>`;\n\nreturn [{ json: { html, today, generatedAt: kpisData.generatedAt } }];"
+      },
+      "id": "node-build-html",
+      "name": "Build HTML Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2420, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Convert HTML string to a base64 binary so Gotenberg can receive it as multipart\nconst { html, today, generatedAt } = $input.first().json;\nconst buf = Buffer.from(html, 'utf8');\nreturn [{\n  json: { today, generatedAt },\n  binary: {\n    reportFile: {\n      data:          buf.toString('base64'),\n      mimeType:      'text/html',\n      fileName:      'index.html',\n      fileExtension: 'html'\n    }\n  }\n}];"
+      },
+      "id": "node-html-binary",
+      "name": "HTML → Binary Buffer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2640, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3000/forms/chromium/convert/html",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            { "parameterType": "formBinaryData", "name": "files",        "inputDataFieldName": "reportFile" },
+            { "parameterType": "formData",       "name": "marginTop",    "value": "0.5in" },
+            { "parameterType": "formData",       "name": "marginBottom", "value": "0.5in" },
+            { "parameterType": "formData",       "name": "marginLeft",   "value": "0.4in" },
+            { "parameterType": "formData",       "name": "marginRight",  "value": "0.4in" },
+            { "parameterType": "formData",       "name": "paperWidth",   "value": "11" },
+            { "parameterType": "formData",       "name": "paperHeight",  "value": "17" },
+            { "parameterType": "formData",       "name": "scale",        "value": "0.85" }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "pdfFile"
+            }
+          }
+        }
+      },
+      "id": "node-gotenberg",
+      "name": "Gotenberg → Generate PDF",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2860, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Rename the PDF binary to a dated filename\nconst item = $input.first();\nconst dateStr = new Date().toISOString().slice(0, 10);\nconst fileName = `Sales_Report_${dateStr}.pdf`;\n\nconst pdfBinary = item.binary?.pdfFile;\nif (!pdfBinary) throw new Error('No pdfFile binary from Gotenberg.');\n\nreturn [{\n  json:   { fileName, dateStr },\n  binary: {\n    pdfFile: { ...pdfBinary, fileName, fileExtension: 'pdf' }\n  }\n}];"
+      },
+      "id": "node-rename-pdf",
+      "name": "Rename PDF File",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3080, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare email subject, preview text and metadata\nconst { fileName, dateStr } = $input.first().json;\nconst kpis = $('Calculate KPIs').first().json.kpis;\n\nconst fmt = v => Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });\n\nreturn [{\n  json: {\n    subject:     `Sales & Products Report — ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`,\n    previewText: `Revenue $${fmt(kpis.totalRevenue)} | Profit $${fmt(kpis.totalProfit)} | Margin ${kpis.avgMarginPct}% | ${kpis.totalOrders} orders`,\n    fileName,\n    dateStr,\n    kpis\n  },\n  binary: $input.first().binary\n}];"
+      },
+      "id": "node-set-email-meta",
+      "name": "Set Email Subject & Meta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3300, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build the styled HTML email body (email-safe inline CSS)\nconst d = $input.first().json;\nconst { kpis, subject, previewText, fileName } = d;\nconst merged = $('Merge Aggregations').first().json;\nconst { byCategory, monthly, top5Products, leaderboard } = merged;\n\nconst fmt    = v => Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });\nconst fmtPct = v => Number(v).toFixed(1) + '%';\nconst today  = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });\n\nconst catRows = (byCategory || []).map(d => `\n  <tr>\n    <td style=\"padding:8px 12px;border-bottom:1px solid #f0f0f0;font-size:12px\">${d.category}</td>\n    <td style=\"padding:8px 12px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:12px\">$${fmt(d.revenue)}</td>\n    <td style=\"padding:8px 12px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:12px\">$${fmt(d.gross_profit)}</td>\n    <td style=\"padding:8px 12px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:12px\">${fmtPct(d.margin_pct)}</td>\n  </tr>`).join('');\n\nconst top5Rows = (top5Products || []).map(d => `\n  <tr>\n    <td style=\"padding:8px 12px;border-bottom:1px solid #f0f0f0;font-size:12px\">${d.product}</td>\n    <td style=\"padding:8px 12px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:12px\">${d.units}</td>\n    <td style=\"padding:8px 12px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:12px\">$${fmt(d.revenue)}</td>\n    <td style=\"padding:8px 12px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:12px\">${fmtPct(d.margin_pct)}</td>\n  </tr>`).join('');\n\nconst leadRows = (leaderboard || []).slice(0,3).map((d, i) => {\n  const medals = ['#1','#2','#3'];\n  return `\n  <tr>\n    <td style=\"padding:8px 12px;border-bottom:1px solid #f0f0f0;font-size:12px\">${medals[i]} ${d.salesperson}</td>\n    <td style=\"padding:8px 12px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:12px\">$${fmt(d.revenue)}</td>\n    <td style=\"padding:8px 12px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:12px\">${d.orders}</td>\n  </tr>`;\n}).join('');\n\nconst emailHtml = `<!DOCTYPE html>\n<html><head><meta charset=\"UTF-8\"></head>\n<body style=\"margin:0;padding:0;font-family:'Segoe UI',Arial,sans-serif;background:#f0f2f5\">\n<div style=\"display:none;max-height:0;overflow:hidden\">${previewText}</div>\n<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#f0f2f5;padding:28px 0\">\n<tr><td align=\"center\">\n<table width=\"620\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:white;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.1)\">\n\n  <tr><td style=\"background:linear-gradient(135deg,#1a1a2e,#0f3460);padding:32px;color:white\">\n    <div style=\"font-size:10px;color:#a8b2d8;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px\">Automated Business Intelligence</div>\n    <div style=\"font-size:24px;font-weight:700;margin-bottom:6px\">Sales &amp; Products Report</div>\n    <div style=\"font-size:12px;color:#cbd5e1\">${today}</div>\n  </td></tr>\n\n  <tr><td style=\"padding:24px 32px 0\">\n    <p style=\"font-size:14px;color:#374151;line-height:1.7;margin:0\">\n      Hello,<br><br>Your automated sales pipeline report is ready. Below is a summary of key metrics — the <strong>full PDF report</strong> is attached.\n    </p>\n  </td></tr>\n\n  <tr><td style=\"padding:20px 32px\">\n    <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\">\n      <tr>\n        <td width=\"25%\" style=\"padding-right:8px\">\n          <div style=\"background:#eff6ff;border-left:4px solid #3b82f6;border-radius:8px;padding:14px\">\n            <div style=\"font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:.8px;font-weight:600\">Revenue</div>\n            <div style=\"font-size:19px;font-weight:700;color:#1e40af;margin:5px 0 2px\">$${fmt(kpis.totalRevenue)}</div>\n            <div style=\"font-size:10px;color:#9ca3af\">${kpis.totalOrders} orders</div>\n          </div>\n        </td>\n        <td width=\"25%\" style=\"padding:0 4px\">\n          <div style=\"background:#f0fdf4;border-left:4px solid #10b981;border-radius:8px;padding:14px\">\n            <div style=\"font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:.8px;font-weight:600\">Profit</div>\n            <div style=\"font-size:19px;font-weight:700;color:#065f46;margin:5px 0 2px\">$${fmt(kpis.totalProfit)}</div>\n            <div style=\"font-size:10px;color:#9ca3af\">After COGS</div>\n          </div>\n        </td>\n        <td width=\"25%\" style=\"padding:0 4px\">\n          <div style=\"background:#faf5ff;border-left:4px solid #8b5cf6;border-radius:8px;padding:14px\">\n            <div style=\"font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:.8px;font-weight:600\">Margin</div>\n            <div style=\"font-size:19px;font-weight:700;color:#5b21b6;margin:5px 0 2px\">${fmtPct(kpis.avgMarginPct)}</div>\n            <div style=\"font-size:10px;color:#9ca3af\">Avg gross margin</div>\n          </div>\n        </td>\n        <td width=\"25%\" style=\"padding-left:8px\">\n          <div style=\"background:#fff7ed;border-left:4px solid #f59e0b;border-radius:8px;padding:14px\">\n            <div style=\"font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:.8px;font-weight:600\">Avg Order</div>\n            <div style=\"font-size:19px;font-weight:700;color:#92400e;margin:5px 0 2px\">$${fmt(kpis.avgOrderValue)}</div>\n            <div style=\"font-size:10px;color:#9ca3af\">${kpis.totalUnits} units</div>\n          </div>\n        </td>\n      </tr>\n    </table>\n  </td></tr>\n\n  <tr><td style=\"padding:0 32px 20px\">\n    <div style=\"font-size:11px;font-weight:700;color:#0f3460;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid #e5e7eb;padding-bottom:7px;margin-bottom:12px\">Performance by Category</div>\n    <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border:1px solid #e5e7eb;border-radius:8px;overflow:hidden\">\n      <thead><tr style=\"background:#f8fafc\">\n        <th style=\"padding:9px 12px;text-align:left;font-size:9px;font-weight:700;color:#374151;text-transform:uppercase\">Category</th>\n        <th style=\"padding:9px 12px;text-align:right;font-size:9px;font-weight:700;color:#374151;text-transform:uppercase\">Revenue</th>\n        <th style=\"padding:9px 12px;text-align:right;font-size:9px;font-weight:700;color:#374151;text-transform:uppercase\">Profit</th>\n        <th style=\"padding:9px 12px;text-align:right;font-size:9px;font-weight:700;color:#374151;text-transform:uppercase\">Margin</th>\n      </tr></thead>\n      <tbody>${catRows}</tbody>\n    </table>\n  </td></tr>\n\n  <tr><td style=\"padding:0 32px 20px\">\n    <div style=\"font-size:11px;font-weight:700;color:#0f3460;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid #e5e7eb;padding-bottom:7px;margin-bottom:12px\">Top 5 Products</div>\n    <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border:1px solid #e5e7eb;border-radius:8px;overflow:hidden\">\n      <thead><tr style=\"background:#f8fafc\">\n        <th style=\"padding:9px 12px;text-align:left;font-size:9px;font-weight:700;color:#374151;text-transform:uppercase\">Product</th>\n        <th style=\"padding:9px 12px;text-align:right;font-size:9px;font-weight:700;color:#374151;text-transform:uppercase\">Units</th>\n        <th style=\"padding:9px 12px;text-align:right;font-size:9px;font-weight:700;color:#374151;text-transform:uppercase\">Revenue</th>\n        <th style=\"padding:9px 12px;text-align:right;font-size:9px;font-weight:700;color:#374151;text-transform:uppercase\">Margin</th>\n      </tr></thead>\n      <tbody>${top5Rows}</tbody>\n    </table>\n  </td></tr>\n\n  <tr><td style=\"padding:0 32px 20px\">\n    <div style=\"font-size:11px;font-weight:700;color:#0f3460;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid #e5e7eb;padding-bottom:7px;margin-bottom:12px\">Top 3 Salesperson</div>\n    <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border:1px solid #e5e7eb;border-radius:8px;overflow:hidden\">\n      <thead><tr style=\"background:#f8fafc\">\n        <th style=\"padding:9px 12px;text-align:left;font-size:9px;font-weight:700;color:#374151;text-transform:uppercase\">Salesperson</th>\n        <th style=\"padding:9px 12px;text-align:right;font-size:9px;font-weight:700;color:#374151;text-transform:uppercase\">Revenue</th>\n        <th style=\"padding:9px 12px;text-align:right;font-size:9px;font-weight:700;color:#374151;text-transform:uppercase\">Orders</th>\n      </tr></thead>\n      <tbody>${leadRows}</tbody>\n    </table>\n  </td></tr>\n\n  <tr><td style=\"padding:0 32px 24px\">\n    <div style=\"background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:14px 18px\">\n      <strong style=\"font-size:12px;color:#92400e\">Full Report Attached</strong>\n      <span style=\"font-size:12px;color:#78350f\"> — ${fileName} contains the complete analysis including all orders, regional breakdown, monthly trend, and channel performance.</span>\n    </div>\n  </td></tr>\n\n  <tr><td style=\"background:#f8fafc;padding:18px 32px;border-top:1px solid #e5e7eb;text-align:center\">\n    <p style=\"font-size:10px;color:#9ca3af;margin:0\">Automatically generated by n8n &nbsp;|&nbsp; ${today} &nbsp;|&nbsp; Confidential</p>\n  </td></tr>\n\n</table>\n</td></tr></table>\n</body></html>`;\n\nreturn [{\n  json:   { emailHtml, subject },\n  binary: $input.first().binary\n}];"
+      },
+      "id": "node-build-email",
+      "name": "Build Email HTML Body",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3520, 400]
+    },
+    {
+      "parameters": {
+        "sendTo": "YOUR_EMAIL_HERE",
+        "subject": "={{ $json.subject }}",
+        "emailType": "html",
+        "message": "={{ $json.emailHtml }}",
+        "options": {
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              { "property": "pdfFile" }
+            ]
+          }
+        }
+      },
+      "id": "node-gmail",
+      "name": "Gmail → Send Report",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [3740, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Log execution summary\nconst kpis = $('Calculate KPIs').first().json.kpis;\nconst meta  = $('Set Email Subject & Meta').first().json;\nconst fmt   = v => Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });\n\nconst summary = {\n  status:        'SUCCESS',\n  completedAt:   new Date().toISOString(),\n  pdfFileName:   meta.fileName,\n  totalRevenue:  `$${fmt(kpis.totalRevenue)}`,\n  grossProfit:   `$${fmt(kpis.totalProfit)}`,\n  avgMargin:     `${kpis.avgMarginPct}%`,\n  totalOrders:   kpis.totalOrders,\n  unitsSold:     kpis.totalUnits,\n  sheetsUpdated: 2\n};\n\nconsole.log('=== WORKFLOW COMPLETED ===');\nconsole.log(JSON.stringify(summary, null, 2));\n\nreturn [{ json: summary }];"
+      },
+      "id": "node-success-log",
+      "name": "Success Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3960, 400]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{ "node": "Read CSV File",         "type": "main", "index": 0 }]]
+    },
+    "Read CSV File": {
+      "main": [[{ "node": "Parse CSV",             "type": "main", "index": 0 }]]
+    },
+    "Parse CSV": {
+      "main": [[{ "node": "Validate & Clean Data", "type": "main", "index": 0 }]]
+    },
+    "Validate & Clean Data": {
+      "main": [[{ "node": "Sort by Gross Profit",  "type": "main", "index": 0 }]]
+    },
+    "Sort by Gross Profit": {
+      "main": [[{ "node": "Calculate KPIs",        "type": "main", "index": 0 }]]
+    },
+    "Calculate KPIs": {
+      "main": [[
+        { "node": "Aggregate by Category",      "type": "main", "index": 0 },
+        { "node": "Aggregate by Region",        "type": "main", "index": 0 },
+        { "node": "Aggregate Monthly Trend",    "type": "main", "index": 0 },
+        { "node": "Top Products & Leaderboard", "type": "main", "index": 0 }
+      ]]
+    },
+    "Aggregate by Category":      { "main": [[{ "node": "Merge Aggregations", "type": "main", "index": 0 }]] },
+    "Aggregate by Region":        { "main": [[{ "node": "Merge Aggregations", "type": "main", "index": 1 }]] },
+    "Aggregate Monthly Trend":    { "main": [[{ "node": "Merge Aggregations", "type": "main", "index": 2 }]] },
+    "Top Products & Leaderboard": { "main": [[{ "node": "Merge Aggregations", "type": "main", "index": 3 }]] },
+    "Merge Aggregations": {
+      "main": [[
+        { "node": "Flatten Rows for Sheets", "type": "main", "index": 0 },
+        { "node": "Format KPI Sheet Rows",   "type": "main", "index": 0 },
+        { "node": "Build HTML Report",       "type": "main", "index": 0 }
+      ]]
+    },
+    "Flatten Rows for Sheets":  { "main": [[{ "node": "Sheets → Sales Data",      "type": "main", "index": 0 }]] },
+    "Format KPI Sheet Rows":    { "main": [[{ "node": "Sheets → KPI Summary",     "type": "main", "index": 0 }]] },
+    "Build HTML Report":        { "main": [[{ "node": "HTML → Binary Buffer",      "type": "main", "index": 0 }]] },
+    "HTML → Binary Buffer":     { "main": [[{ "node": "Gotenberg → Generate PDF", "type": "main", "index": 0 }]] },
+    "Gotenberg → Generate PDF": { "main": [[{ "node": "Rename PDF File",           "type": "main", "index": 0 }]] },
+    "Rename PDF File":          { "main": [[{ "node": "Set Email Subject & Meta",  "type": "main", "index": 0 }]] },
+    "Set Email Subject & Meta": { "main": [[{ "node": "Build Email HTML Body",     "type": "main", "index": 0 }]] },
+    "Build Email HTML Body":    { "main": [[{ "node": "Gmail → Send Report",       "type": "main", "index": 0 }]] },
+    "Gmail → Send Report":      { "main": [[{ "node": "Success Log",               "type": "main", "index": 0 }]] }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "tags": ["csv", "google-sheets", "pdf", "gmail", "reporting", "gotenberg", "bi"],
+  "triggerCount": 0,
+  "versionId": "3"
+}

@@ -1,0 +1,101 @@
+order_id,date,product_id,product_name,category,sku,quantity,unit_price,unit_cost,discount_pct,revenue,cogs,gross_profit,gross_margin_pct,region,salesperson,channel,customer_id,customer_name,payment_method,status
+ORD-0001,2024-01-03,PRD-101,Wireless Headphones Pro,Electronics,WHP-101-BLK,2,129.99,62.00,0,259.98,124.00,135.98,52.30,North,Alice Johnson,Online,CUST-441,Acme Corp,Credit Card,Completed
+ORD-0002,2024-01-05,PRD-102,Ergonomic Office Chair,Furniture,EOC-102-GRY,1,349.00,165.00,5,331.55,165.00,166.55,50.24,South,Bob Martinez,In-Store,CUST-882,Beta LLC,Cash,Completed
+ORD-0003,2024-01-07,PRD-103,Standing Desk Converter,Furniture,SDC-103-WHT,3,199.99,94.00,10,539.97,282.00,257.97,47.77,East,Carol Smith,Online,CUST-213,Gamma Inc,PayPal,Completed
+ORD-0004,2024-01-09,PRD-104,4K Monitor 27in,Electronics,MON-104-SLV,1,449.00,210.00,0,449.00,210.00,239.00,53.23,West,David Lee,Reseller,CUST-774,Delta Co,Wire Transfer,Completed
+ORD-0005,2024-01-11,PRD-105,Mechanical Keyboard,Electronics,MKB-105-BLK,4,89.99,38.00,0,359.96,152.00,207.96,57.77,North,Alice Johnson,Online,CUST-335,Epsilon Ltd,Credit Card,Completed
+ORD-0006,2024-01-14,PRD-106,USB-C Hub 7-Port,Electronics,UCH-106-SLV,6,49.99,19.00,5,284.94,114.00,170.94,59.99,South,Emma Davis,Online,CUST-556,Zeta Group,Credit Card,Completed
+ORD-0007,2024-01-16,PRD-107,Noise Cancelling Earbuds,Electronics,NCE-107-WHT,2,199.99,89.00,0,399.98,178.00,221.98,55.50,East,Frank Wilson,Online,CUST-667,Eta Partners,Apple Pay,Completed
+ORD-0008,2024-01-18,PRD-108,Laptop Stand Aluminum,Accessories,LSA-108-SLV,5,59.99,22.00,0,299.95,110.00,189.95,63.33,West,George Brown,In-Store,CUST-228,Theta Corp,Cash,Completed
+ORD-0009,2024-01-20,PRD-109,Wireless Mouse Pro,Electronics,WMP-109-BLK,8,44.99,17.00,10,323.93,136.00,187.93,58.02,North,Alice Johnson,Online,CUST-889,Iota Ventures,Credit Card,Completed
+ORD-0010,2024-01-22,PRD-110,LED Desk Lamp,Accessories,LDL-110-WHT,3,39.99,14.00,0,119.97,42.00,77.97,65.00,South,Bob Martinez,Online,CUST-110,Kappa LLC,PayPal,Completed
+ORD-0011,2024-01-25,PRD-101,Wireless Headphones Pro,Electronics,WHP-101-BLK,1,129.99,62.00,0,129.99,62.00,67.99,52.30,East,Carol Smith,Reseller,CUST-441,Acme Corp,Wire Transfer,Completed
+ORD-0012,2024-01-27,PRD-111,Webcam 1080p HD,Electronics,WCM-111-BLK,4,79.99,31.00,5,303.96,124.00,179.96,59.21,West,David Lee,Online,CUST-321,Lambda Co,Credit Card,Completed
+ORD-0013,2024-01-29,PRD-112,Blue Light Glasses,Accessories,BLG-112-BLK,7,34.99,11.00,0,244.93,77.00,167.93,68.56,North,Emma Davis,Online,CUST-532,Mu Holdings,Credit Card,Completed
+ORD-0014,2024-02-01,PRD-113,Portable SSD 1TB,Electronics,SSD-113-BLK,2,109.99,52.00,0,219.98,104.00,115.98,52.72,South,Frank Wilson,Online,CUST-743,Nu Industries,PayPal,Completed
+ORD-0015,2024-02-03,PRD-114,Smart Power Strip,Accessories,SPS-114-WHT,3,54.99,21.00,5,156.72,63.00,93.72,59.81,East,George Brown,In-Store,CUST-954,Xi Retail,Cash,Completed
+ORD-0016,2024-02-05,PRD-115,Cable Management Box,Accessories,CMB-115-BLK,5,29.99,9.50,0,149.95,47.50,102.45,68.32,West,Alice Johnson,Online,CUST-165,Omicron Store,Credit Card,Completed
+ORD-0017,2024-02-07,PRD-102,Ergonomic Office Chair,Furniture,EOC-102-GRY,2,349.00,165.00,10,628.20,330.00,298.20,47.47,North,Bob Martinez,Reseller,CUST-376,Pi Furniture,Wire Transfer,Completed
+ORD-0018,2024-02-09,PRD-116,Monitor Arm Dual,Accessories,MAD-116-BLK,1,89.99,38.00,0,89.99,38.00,51.99,57.77,South,Carol Smith,Online,CUST-587,Rho Office,Credit Card,Completed
+ORD-0019,2024-02-11,PRD-117,Keyboard Tray,Furniture,KBT-117-BLK,2,74.99,30.00,0,149.98,60.00,89.98,60.00,East,David Lee,Online,CUST-798,Sigma Ltd,Apple Pay,Completed
+ORD-0020,2024-02-13,PRD-104,4K Monitor 27in,Electronics,MON-104-SLV,3,449.00,210.00,5,1279.65,630.00,649.65,50.77,West,Emma Davis,Reseller,CUST-909,Tau Enterprise,Wire Transfer,Completed
+ORD-0021,2024-02-15,PRD-118,Desk Organizer Set,Accessories,DOS-118-BLK,6,24.99,8.00,0,149.94,48.00,101.94,67.99,North,Frank Wilson,Online,CUST-120,Upsilon Retail,Credit Card,Completed
+ORD-0022,2024-02-18,PRD-119,Whiteboard 36x24,Office Supplies,WBD-119-WHT,1,69.99,28.00,0,69.99,28.00,41.99,59.99,South,George Brown,In-Store,CUST-231,Phi Corp,Cash,Completed
+ORD-0023,2024-02-20,PRD-120,Sticky Notes Bulk,Office Supplies,SNB-120-YLW,10,12.99,3.50,10,116.91,35.00,81.91,70.07,East,Alice Johnson,Online,CUST-342,Chi Office,Credit Card,Completed
+ORD-0024,2024-02-22,PRD-105,Mechanical Keyboard,Electronics,MKB-105-BLK,2,89.99,38.00,0,179.98,76.00,103.98,57.77,West,Bob Martinez,Online,CUST-553,Psi Tech,PayPal,Completed
+ORD-0025,2024-02-25,PRD-121,Foot Rest Ergonomic,Accessories,FRE-121-BLK,4,44.99,17.00,5,171.16,68.00,103.16,60.27,North,Carol Smith,Online,CUST-764,Omega Group,Credit Card,Completed
+ORD-0026,2024-02-27,PRD-103,Standing Desk Converter,Furniture,SDC-103-WHT,1,199.99,94.00,0,199.99,94.00,105.99,53.00,South,David Lee,In-Store,CUST-875,Alpha Co,Cash,Completed
+ORD-0027,2024-03-01,PRD-122,Headset Stand,Accessories,HST-122-BLK,3,34.99,12.00,0,104.97,36.00,68.97,65.71,East,Emma Davis,Online,CUST-186,Beta Tech,Credit Card,Completed
+ORD-0028,2024-03-03,PRD-107,Noise Cancelling Earbuds,Electronics,NCE-107-WHT,5,199.99,89.00,10,899.96,445.00,454.96,50.55,West,Frank Wilson,Online,CUST-397,Gamma Retail,Apple Pay,Completed
+ORD-0029,2024-03-05,PRD-123,Printer Paper A4,Office Supplies,PPA-123-WHT,20,8.99,2.80,0,179.80,56.00,123.80,68.85,North,George Brown,Online,CUST-508,Delta Office,Credit Card,Completed
+ORD-0030,2024-03-07,PRD-113,Portable SSD 1TB,Electronics,SSD-113-BLK,4,109.99,52.00,5,418.96,208.00,210.96,50.36,South,Alice Johnson,Online,CUST-619,Epsilon Media,PayPal,Completed
+ORD-0031,2024-03-10,PRD-124,Laptop Backpack Pro,Accessories,LBP-124-BLK,2,79.99,32.00,0,159.98,64.00,95.98,59.99,East,Bob Martinez,Online,CUST-830,Zeta Travel,Credit Card,Completed
+ORD-0032,2024-03-12,PRD-106,USB-C Hub 7-Port,Electronics,UCH-106-SLV,10,49.99,19.00,10,449.91,190.00,259.91,57.77,West,Carol Smith,Reseller,CUST-941,Eta Imports,Wire Transfer,Completed
+ORD-0033,2024-03-14,PRD-125,Desk Plant Succulent,Accessories,DPS-125-GRN,5,19.99,6.00,0,99.95,30.00,69.95,69.98,North,David Lee,Online,CUST-152,Theta Decor,Credit Card,Completed
+ORD-0034,2024-03-17,PRD-109,Wireless Mouse Pro,Electronics,WMP-109-BLK,6,44.99,17.00,5,256.44,102.00,154.44,60.22,South,Emma Davis,Online,CUST-263,Iota Gaming,PayPal,Completed
+ORD-0035,2024-03-19,PRD-110,LED Desk Lamp,Accessories,LDL-110-WHT,4,39.99,14.00,0,159.96,56.00,103.96,65.00,East,Frank Wilson,In-Store,CUST-474,Kappa Decor,Cash,Completed
+ORD-0036,2024-03-21,PRD-126,Cable Organizer Clips,Accessories,COC-126-BLK,15,9.99,2.50,0,149.85,37.50,112.35,74.98,West,George Brown,Online,CUST-685,Lambda Home,Credit Card,Completed
+ORD-0037,2024-03-24,PRD-104,4K Monitor 27in,Electronics,MON-104-SLV,2,449.00,210.00,0,898.00,420.00,478.00,53.23,North,Alice Johnson,Online,CUST-796,Mu Studios,Credit Card,Completed
+ORD-0038,2024-03-26,PRD-116,Monitor Arm Dual,Accessories,MAD-116-BLK,3,89.99,38.00,5,256.47,114.00,142.47,55.54,South,Bob Martinez,Online,CUST-907,Nu Design,PayPal,Completed
+ORD-0039,2024-03-28,PRD-102,Ergonomic Office Chair,Furniture,EOC-102-GRY,1,349.00,165.00,0,349.00,165.00,184.00,52.72,East,Carol Smith,In-Store,CUST-118,Xi Ergonomics,Cash,Completed
+ORD-0040,2024-03-31,PRD-117,Keyboard Tray,Furniture,KBT-117-BLK,4,74.99,30.00,10,269.96,120.00,149.96,55.55,West,David Lee,Online,CUST-229,Omicron Desks,Credit Card,Completed
+ORD-0041,2024-04-02,PRD-111,Webcam 1080p HD,Electronics,WCM-111-BLK,3,79.99,31.00,0,239.97,93.00,146.97,61.24,North,Emma Davis,Online,CUST-340,Pi Video,Credit Card,Completed
+ORD-0042,2024-04-04,PRD-101,Wireless Headphones Pro,Electronics,WHP-101-BLK,5,129.99,62.00,5,617.05,310.00,307.05,49.76,South,Frank Wilson,Online,CUST-551,Rho Audio,Apple Pay,Completed
+ORD-0043,2024-04-07,PRD-119,Whiteboard 36x24,Office Supplies,WBD-119-WHT,2,69.99,28.00,0,139.98,56.00,83.98,59.99,East,George Brown,In-Store,CUST-762,Sigma Schools,Cash,Completed
+ORD-0044,2024-04-09,PRD-127,Mouse Pad XL,Accessories,MPX-127-BLK,8,24.99,7.50,5,189.92,60.00,129.92,68.41,West,Alice Johnson,Online,CUST-973,Tau Gaming,Credit Card,Completed
+ORD-0045,2024-04-11,PRD-118,Desk Organizer Set,Accessories,DOS-118-BLK,4,24.99,8.00,0,99.96,32.00,67.96,67.99,North,Bob Martinez,Online,CUST-184,Upsilon Office,PayPal,Completed
+ORD-0046,2024-04-14,PRD-114,Smart Power Strip,Accessories,SPS-114-WHT,6,54.99,21.00,10,296.95,126.00,170.95,57.57,South,Carol Smith,Online,CUST-395,Phi Electric,Credit Card,Completed
+ORD-0047,2024-04-16,PRD-113,Portable SSD 1TB,Electronics,SSD-113-BLK,3,109.99,52.00,0,329.97,156.00,173.97,52.72,East,David Lee,Online,CUST-606,Chi Storage,Credit Card,Completed
+ORD-0048,2024-04-18,PRD-120,Sticky Notes Bulk,Office Supplies,SNB-120-YLW,12,12.99,3.50,5,148.10,42.00,106.10,71.64,West,Emma Davis,Online,CUST-817,Psi Paper,PayPal,Completed
+ORD-0049,2024-04-21,PRD-103,Standing Desk Converter,Furniture,SDC-103-WHT,2,199.99,94.00,5,379.98,188.00,191.98,50.52,North,Frank Wilson,Reseller,CUST-928,Omega Desks,Wire Transfer,Completed
+ORD-0050,2024-04-23,PRD-108,Laptop Stand Aluminum,Accessories,LSA-108-SLV,7,59.99,22.00,0,419.93,154.00,265.93,63.33,South,George Brown,Online,CUST-139,Alpha Laptops,Credit Card,Completed
+ORD-0051,2024-04-25,PRD-121,Foot Rest Ergonomic,Accessories,FRE-121-BLK,3,44.99,17.00,0,134.97,51.00,83.97,62.21,East,Alice Johnson,Online,CUST-250,Beta Wellness,Credit Card,Completed
+ORD-0052,2024-04-28,PRD-115,Cable Management Box,Accessories,CMB-115-BLK,4,29.99,9.50,5,113.96,38.00,75.96,66.66,West,Bob Martinez,Online,CUST-461,Gamma Cables,PayPal,Completed
+ORD-0053,2024-04-30,PRD-105,Mechanical Keyboard,Electronics,MKB-105-BLK,3,89.99,38.00,10,242.97,114.00,128.97,53.08,North,Carol Smith,Online,CUST-672,Delta Keyboards,Credit Card,Completed
+ORD-0054,2024-05-02,PRD-122,Headset Stand,Accessories,HST-122-BLK,5,34.99,12.00,0,174.95,60.00,114.95,65.71,South,David Lee,Online,CUST-883,Epsilon Audio,Credit Card,Completed
+ORD-0055,2024-05-05,PRD-107,Noise Cancelling Earbuds,Electronics,NCE-107-WHT,1,199.99,89.00,0,199.99,89.00,110.99,55.50,East,Emma Davis,Online,CUST-194,Zeta Sound,Apple Pay,Completed
+ORD-0056,2024-05-07,PRD-104,4K Monitor 27in,Electronics,MON-104-SLV,4,449.00,210.00,10,1616.40,840.00,776.40,48.04,West,Frank Wilson,Reseller,CUST-305,Eta Monitors,Wire Transfer,Completed
+ORD-0057,2024-05-09,PRD-124,Laptop Backpack Pro,Accessories,LBP-124-BLK,3,79.99,32.00,5,228.57,96.00,132.57,58.00,North,George Brown,Online,CUST-516,Theta Travel,Credit Card,Completed
+ORD-0058,2024-05-12,PRD-109,Wireless Mouse Pro,Electronics,WMP-109-BLK,10,44.99,17.00,0,449.90,170.00,279.90,62.21,South,Alice Johnson,Online,CUST-727,Iota Peripherals,Credit Card,Completed
+ORD-0059,2024-05-14,PRD-106,USB-C Hub 7-Port,Electronics,UCH-106-SLV,5,49.99,19.00,0,249.95,95.00,154.95,61.99,East,Bob Martinez,Online,CUST-938,Kappa Hubs,PayPal,Completed
+ORD-0060,2024-05-16,PRD-126,Cable Organizer Clips,Accessories,COC-126-BLK,20,9.99,2.50,10,179.82,50.00,129.82,72.20,West,Carol Smith,Online,CUST-149,Lambda Cables,Credit Card,Completed
+ORD-0061,2024-05-19,PRD-102,Ergonomic Office Chair,Furniture,EOC-102-GRY,3,349.00,165.00,5,994.65,495.00,499.65,50.23,North,David Lee,Reseller,CUST-260,Mu Furniture,Wire Transfer,Completed
+ORD-0062,2024-05-21,PRD-112,Blue Light Glasses,Accessories,BLG-112-BLK,6,34.99,11.00,0,209.94,66.00,143.94,68.56,South,Emma Davis,Online,CUST-471,Nu Eyewear,Credit Card,Completed
+ORD-0063,2024-05-23,PRD-123,Printer Paper A4,Office Supplies,PPA-123-WHT,15,8.99,2.80,0,134.85,42.00,92.85,68.85,East,Frank Wilson,Online,CUST-682,Xi Print,PayPal,Completed
+ORD-0064,2024-05-26,PRD-101,Wireless Headphones Pro,Electronics,WHP-101-BLK,3,129.99,62.00,0,389.97,186.00,203.97,52.30,West,George Brown,Online,CUST-893,Omicron Audio,Credit Card,Completed
+ORD-0065,2024-05-28,PRD-127,Mouse Pad XL,Accessories,MPX-127-BLK,10,24.99,7.50,0,249.90,75.00,174.90,69.99,North,Alice Johnson,Online,CUST-104,Pi Gaming,Credit Card,Completed
+ORD-0066,2024-05-30,PRD-116,Monitor Arm Dual,Accessories,MAD-116-BLK,2,89.99,38.00,0,179.98,76.00,103.98,57.77,South,Bob Martinez,In-Store,CUST-315,Rho Mounts,Cash,Completed
+ORD-0067,2024-06-02,PRD-119,Whiteboard 36x24,Office Supplies,WBD-119-WHT,3,69.99,28.00,5,199.47,84.00,115.47,57.89,East,Carol Smith,Online,CUST-526,Sigma Schools,Credit Card,Completed
+ORD-0068,2024-06-04,PRD-117,Keyboard Tray,Furniture,KBT-117-BLK,2,74.99,30.00,0,149.98,60.00,89.98,60.00,West,David Lee,Online,CUST-737,Tau Ergonomics,PayPal,Completed
+ORD-0069,2024-06-06,PRD-113,Portable SSD 1TB,Electronics,SSD-113-BLK,5,109.99,52.00,5,521.95,260.00,261.95,50.18,North,Emma Davis,Online,CUST-948,Upsilon Data,Credit Card,Completed
+ORD-0070,2024-06-09,PRD-108,Laptop Stand Aluminum,Accessories,LSA-108-SLV,6,59.99,22.00,0,359.94,132.00,227.94,63.33,South,Frank Wilson,Online,CUST-159,Phi Stands,Credit Card,Completed
+ORD-0071,2024-06-11,PRD-111,Webcam 1080p HD,Electronics,WCM-111-BLK,4,79.99,31.00,10,287.96,124.00,163.96,56.94,East,George Brown,Online,CUST-370,Chi Video,PayPal,Completed
+ORD-0072,2024-06-13,PRD-121,Foot Rest Ergonomic,Accessories,FRE-121-BLK,5,44.99,17.00,0,224.95,85.00,139.95,62.21,West,Alice Johnson,Online,CUST-581,Psi Comfort,Credit Card,Completed
+ORD-0073,2024-06-16,PRD-110,LED Desk Lamp,Accessories,LDL-110-WHT,8,39.99,14.00,5,303.92,112.00,191.92,63.17,North,Bob Martinez,Online,CUST-792,Omega Lighting,Credit Card,Completed
+ORD-0074,2024-06-18,PRD-125,Desk Plant Succulent,Accessories,DPS-125-GRN,12,19.99,6.00,0,239.88,72.00,167.88,70.00,South,Carol Smith,Online,CUST-903,Alpha Decor,PayPal,Completed
+ORD-0075,2024-06-20,PRD-103,Standing Desk Converter,Furniture,SDC-103-WHT,4,199.99,94.00,10,719.96,376.00,343.96,47.77,East,David Lee,Reseller,CUST-114,Beta Office,Wire Transfer,Completed
+ORD-0076,2024-06-23,PRD-128,Wireless Charger Pad,Electronics,WCP-128-BLK,7,39.99,14.50,5,266.33,101.50,164.83,61.89,West,Emma Davis,Online,CUST-225,Gamma Tech,Credit Card,Completed
+ORD-0077,2024-06-25,PRD-129,Adjustable Laptop Arm,Accessories,ALA-129-SLV,2,119.99,52.00,0,239.98,104.00,135.98,56.66,North,Frank Wilson,Online,CUST-436,Delta Studios,Credit Card,Completed
+ORD-0078,2024-06-27,PRD-130,Standing Mat Anti-Fatigue,Accessories,SMA-130-BLK,4,79.99,33.00,10,287.96,132.00,155.96,54.16,South,George Brown,In-Store,CUST-647,Epsilon Wellness,Cash,Completed
+ORD-0079,2024-07-01,PRD-104,4K Monitor 27in,Electronics,MON-104-SLV,1,449.00,210.00,0,449.00,210.00,239.00,53.23,East,Alice Johnson,Online,CUST-858,Zeta Digital,Credit Card,Completed
+ORD-0080,2024-07-03,PRD-131,Desk Cable Raceway,Accessories,DCR-131-WHT,6,22.99,7.00,0,137.94,42.00,95.94,69.55,West,Bob Martinez,Online,CUST-169,Eta Systems,PayPal,Completed
+ORD-0081,2024-07-06,PRD-105,Mechanical Keyboard,Electronics,MKB-105-BLK,5,89.99,38.00,5,427.45,190.00,237.45,55.55,North,Carol Smith,Online,CUST-280,Theta Peripherals,Credit Card,Completed
+ORD-0082,2024-07-08,PRD-132,Ergonomic Wrist Rest,Accessories,EWR-132-GRY,9,19.99,6.50,0,179.91,58.50,121.41,67.49,South,David Lee,Online,CUST-491,Iota Office,Credit Card,Completed
+ORD-0083,2024-07-10,PRD-107,Noise Cancelling Earbuds,Electronics,NCE-107-WHT,3,199.99,89.00,5,569.97,267.00,302.97,53.16,East,Emma Davis,Online,CUST-602,Kappa Media,Apple Pay,Completed
+ORD-0084,2024-07-13,PRD-133,Monitor Privacy Screen,Accessories,MPS-133-BLK,2,54.99,21.00,0,109.98,42.00,67.98,61.81,West,Frank Wilson,Online,CUST-813,Lambda Corp,Credit Card,Completed
+ORD-0085,2024-07-15,PRD-102,Ergonomic Office Chair,Furniture,EOC-102-GRY,4,349.00,165.00,10,1256.40,660.00,596.40,47.47,North,George Brown,Reseller,CUST-924,Mu Enterprise,Wire Transfer,Completed
+ORD-0086,2024-07-17,PRD-134,USB Desk Fan,Accessories,UDF-134-WHT,10,16.99,5.50,5,161.41,55.00,106.41,65.93,South,Alice Johnson,Online,CUST-135,Nu Home,Credit Card,Completed
+ORD-0087,2024-07-20,PRD-109,Wireless Mouse Pro,Electronics,WMP-109-BLK,5,44.99,17.00,0,224.95,85.00,139.95,62.21,East,Bob Martinez,Online,CUST-246,Xi Gaming,PayPal,Completed
+ORD-0088,2024-07-22,PRD-135,Bamboo Desk Shelf,Furniture,BDS-135-BRN,3,89.99,38.00,0,269.97,114.00,155.97,57.77,West,Carol Smith,Online,CUST-457,Omicron Decor,Credit Card,Completed
+ORD-0089,2024-07-24,PRD-113,Portable SSD 1TB,Electronics,SSD-113-BLK,6,109.99,52.00,10,593.95,312.00,281.95,47.47,North,David Lee,Online,CUST-668,Pi Storage,Credit Card,Completed
+ORD-0090,2024-07-27,PRD-136,Document Scanner Portable,Electronics,DSP-136-BLK,1,149.99,68.00,0,149.99,68.00,81.99,54.66,South,Emma Davis,Online,CUST-879,Rho Documents,Credit Card,Completed
+ORD-0091,2024-07-29,PRD-120,Sticky Notes Bulk,Office Supplies,SNB-120-YLW,25,12.99,3.50,5,308.51,87.50,221.01,71.64,East,Frank Wilson,Online,CUST-190,Sigma Office,PayPal,Completed
+ORD-0092,2024-07-31,PRD-111,Webcam 1080p HD,Electronics,WCM-111-BLK,6,79.99,31.00,5,455.94,186.00,269.94,59.21,West,George Brown,Online,CUST-301,Tau Video,Credit Card,Completed
+ORD-0093,2024-08-03,PRD-101,Wireless Headphones Pro,Electronics,WHP-101-BLK,4,129.99,62.00,10,467.96,248.00,219.96,47.00,North,Alice Johnson,Online,CUST-512,Upsilon Audio,Credit Card,Completed
+ORD-0094,2024-08-05,PRD-137,Lap Desk with Cushion,Accessories,LDC-137-GRY,5,49.99,18.00,0,249.95,90.00,159.95,64.00,South,Bob Martinez,Online,CUST-723,Phi Comfort,PayPal,Completed
+ORD-0095,2024-08-07,PRD-117,Keyboard Tray,Furniture,KBT-117-BLK,3,74.99,30.00,5,213.72,90.00,123.72,57.89,East,Carol Smith,Online,CUST-934,Chi Furniture,Credit Card,Completed
+ORD-0096,2024-08-10,PRD-106,USB-C Hub 7-Port,Electronics,UCH-106-SLV,8,49.99,19.00,10,359.93,152.00,207.93,57.77,West,David Lee,Online,CUST-145,Psi Tech,Credit Card,Completed
+ORD-0097,2024-08-12,PRD-138,Wall-Mount Whiteboard,Office Supplies,WMW-138-WHT,2,119.99,51.00,0,239.98,102.00,137.98,57.50,North,Emma Davis,In-Store,CUST-256,Omega Schools,Cash,Completed
+ORD-0098,2024-08-15,PRD-110,LED Desk Lamp,Accessories,LDL-110-WHT,6,39.99,14.00,0,239.94,84.00,155.94,65.00,South,Frank Wilson,Online,CUST-467,Alpha Lighting,Credit Card,Completed
+ORD-0099,2024-08-17,PRD-103,Standing Desk Converter,Furniture,SDC-103-WHT,5,199.99,94.00,5,949.95,470.00,479.95,50.52,East,George Brown,Reseller,CUST-678,Beta Ergonomics,Wire Transfer,Completed
+ORD-0100,2024-08-20,PRD-104,4K Monitor 27in,Electronics,MON-104-SLV,6,449.00,210.00,10,2425.60,1260.00,1165.60,48.05,West,Alice Johnson,Reseller,CUST-889,Gamma Digital,Wire Transfer,Completed
